@@ -36,7 +36,17 @@ const login = async (req, res) => {
   }
 };
 
+const invalidRefreshTokens = [];
+
 const logout = (req, res) => {
+  const refreshToken = req.header('Authorization');
+
+  if (invalidRefreshTokens.includes(refreshToken)) {
+    return res.status(401).json({ message: 'Refresh token is already invalidated' });
+  }
+
+  invalidRefreshTokens.push(refreshToken);
+
   res.json({ message: 'Logout successful' });
 };
 
