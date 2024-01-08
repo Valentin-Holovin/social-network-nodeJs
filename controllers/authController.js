@@ -8,11 +8,19 @@ const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({ email, password: hashedPassword, name });
+    const latestUser = await User.findOne({}, {}, { sort: { 'userId': -1 } });
+    let latestUserId = 0;
+
+    if (latestUser) {
+      latestUserId = latestUser.userId || 0;
+    }
+
+    const newUser = new User({ userId: latestUserId + 1, email, password: hashedPassword, name });
     await newUser.save();
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
