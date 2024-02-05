@@ -6,6 +6,11 @@ const register = async (req, res) => {
   try {
     const { email, password, name } = req.body;
 
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Account with this email already exists' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const latestUser = await User.findOne({}, {}, { sort: { 'userId': -1 } });
@@ -16,6 +21,7 @@ const register = async (req, res) => {
     }
 
     const newUser = new User({ userId: latestUserId + 1, email, password: hashedPassword, name });
+    
     await newUser.save();
 
     res.status(201).json({ message: 'User registered successfully' });
