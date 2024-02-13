@@ -24,7 +24,17 @@ const register = async (req, res) => {
     
     await newUser.save();
 
-    res.status(201).json({ message: 'User registered successfully' });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+
+    const accessToken = jwt.sign({ email: user.email, name: user.name }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+    const refreshToken = jwt.sign({ email: user.email, name: user.name }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+
+    res.status(200).json({ 
+      accessToken, 
+      refreshToken 
+    });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal Server Error' });
@@ -50,16 +60,16 @@ const login = async (req, res) => {
   }
 };
 
-const invalidRefreshTokens = [];
+const invalidRefreshTokens = new Set();
 
 const logout = (req, res) => {
   const refreshToken = req.header('Authorization');
 
-  if (invalidRefreshTokens.includes(refreshToken)) {
+  if (invalidRefreshTokens.has(refreshToken)) {
     return res.status(401).json({ message: 'Refresh token is already invalidated' });
   }
 
-  invalidRefreshTokens.push(refreshToken);
+  invalidRefreshTokens.add(refreshToken);
 
   res.json({ message: 'Logout successful' });
 };
